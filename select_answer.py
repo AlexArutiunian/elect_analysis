@@ -3,26 +3,27 @@ from bs4 import BeautifulSoup
 import os
 
 def select_answer_from_html(file_name):
-	with open(file_name, "r", encoding="utf-8") as f:
-		try:
-			html = f.read()
-		except UnicodeDecodeError as e:
-			
-			with open("errors.txt", "a", encoding="utf-8") as f_er:
-				f_er.write(f"UnicodeDecodeError: {e} with {file_name} \n")
-			return []
+    with open(file_name, "r", encoding="utf-8") as f:
+        try:
+            html = f.read()
+        except UnicodeDecodeError as e:
+            
+            with open("errors.txt", "a", encoding="utf-8") as f_er:
+                f_er.write(f"UnicodeDecodeError: {e} with {file_name} \n")
+            return []
 
-	soup = BeautifulSoup(html, "html.parser")
+    soup = BeautifulSoup(html, "html.parser")
 
-	answers = []
+    answers = []
 
-	for elem in soup.find_all("p"):
-		elem_text = elem.get_text()
-		if "sentiment" or "Sentiment" in elem_text:
-			print(elem_text)
-			answers.append(elem_text)
+    for elem in soup.find_all("p"):
+        elem_text = elem.get_text()
+        checking_ = ["sentiment", "Sentiment", "Negative", "negative", "Positive", "positive"]
+        if any(word.lower() in elem_text.lower() for word in checking_):
+            print(elem_text)
+            answers.append(elem_text)
 
-	return answers  # вернуть ответы
+    return answers  # вернуть ответы    
 
 path = "recov"    
 jsons_path = "bunchs"    
