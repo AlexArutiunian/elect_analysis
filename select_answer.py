@@ -3,29 +3,37 @@ from bs4 import BeautifulSoup
 import os
 
 def select_answer_from_html(file_name):
+    chars = str()
     with open(file_name, "r", encoding="utf-8") as f:
         try:
-            html = f.read()
+            while True:
+               char = f.read(1)
+               chars += char
+               
+               if not char:
+                   break
         except UnicodeDecodeError as e:
             
-            with open("errors.txt", "a", encoding="utf-8") as f_er:
+            with open("errors2.txt", "a", encoding="utf-8") as f_er:
+                print("UnicodeDecodeError")
                 f_er.write(f"UnicodeDecodeError: {e} with {file_name} \n")
-            return []
-
+            
+    html = chars
+   # print(html)
     soup = BeautifulSoup(html, "html.parser")
 
-    answers = []
+    
 
-    for elem in soup.find_all("p"):
-        elem_text = elem.get_text()
-        checking_ = ["sentiment", "Sentiment", "Negative", "negative", "Positive", "positive"]
-        if any(word.lower() in elem_text.lower() for word in checking_):
-            print(elem_text)
-            answers.append(elem_text)
+    divs = soup.find("div", class_="markdown") 
 
+    if divs == None:
+        return "NOTHING"
+
+    answers = divs.get_text()
+   # print(answers)
     return answers  # вернуть ответы    
 
-path = "recov"    
+path = "new"    
 jsons_path = "bunchs"    
 
 for file_ in os.listdir(path):
@@ -35,20 +43,15 @@ for file_ in os.listdir(path):
     answers = select_answer_from_html(path + "/" + file_)
     with open(jsons_path + "/" + file_.replace(".html", ".json"), "r", encoding="utf-8") as fp:
         data = json.load(fp)
+    data["sentiment_claim"] = answers   
+    data["sentiment_answer"] = answers 
 
-    try:        
-        data["sentiment_claim"] = answers[0]
-    except IndexError:
-        print("IndexError")
-        with open("errors.txt", "a", encoding="utf-8") as f_er:
-            f_er.write("IndexError with claim in " + file_ + "\n")
-        data["sentiment_claim"] = "NOTHING"
-    try:        
-        data["sentiment_evidence"] = answers[1]
-    except IndexError:
-        print("IndexError")
-        with open("errors.txt", "a", encoding="utf-8") as f_er:
-            f_er.write("IndexError with evidence in " + file_ + "\n")
-        data["sentiment_evidence"] = "NOTHING" 
+    checking_ = ["sentiment", "Sentiment", "Negative", "negative", "Positive", "positive", "Mixed", "Claim", "mixed", "Neutral", "Uncertain"]
+    if any(word.lower() in answers.lower() for word in checking_):
+        answers = answers
+    else:
+        answers = "NOTHING"    
+
+    print(answers)
     with open(jsons_path + "/" + file_.replace(".html", ".json"), "w", encoding="utf-8") as fp:
         json.dump(data, fp, indent=2)
